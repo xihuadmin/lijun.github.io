@@ -1,0 +1,73 @@
+﻿<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JVM是怎么运行的</title>
+  <link rel="stylesheet" href="https://stackedit.io/style.css" />
+</head>
+
+<body class="stackedit">
+  <div class="stackedit__html"><h3><a id="JVM_0"></a>JVM整体运行原理</h3>
+<p>最近在微信公众号看了大神介绍JVM相关的知识，现做笔记如下</p>
+<p>从.java代码文件编译成.class字节码文件，然后类加载器把.class字节码中的类加载到JVM中，<br>
+<img src="https://img-blog.csdnimg.cn/20190704161659329.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3UwMTA5ODE1MTk=,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<h3><a id="JVM_7"></a>JVM类加载机制</h3>
+<ul>
+<li>一个类从加载到使用一般会经历下面几个步骤</li>
+</ul>
+<h5><a id="_____________9"></a>加载 &gt; 验证 &gt; 准备 &gt; 解析 &gt; 初始化 &gt; 使用 &gt; 卸载</h5>
+<ul>
+<li>一般在代码中使用到该类才会去加载到JVM。<br>
+如下代码，JVM启动后会把Demoutils 类加载到内存里面，然后从main方法执行。<br>
+在使用EmailContent类，此时就会触发JVM类加载器把该类的字节码文件加载到内存里使用。</li>
+</ul>
+<pre><code>	public class DemoUtils {
+
+	    public static void main(String[] args) {
+			EmailContent emailContent = new EmailContent();
+    	}
+    }
+</code></pre>
+<p>所有代码包含main方法的主类一定会在JVM进程启动之后被加载到内存，开始执行main方法内部的代码，有需要使用的类也会通过JVM的类加载器加载到内存中。</p>
+<ul>
+<li>验证、准备、初始化<br>
+验证<br>
+<img src="https://img-blog.csdnimg.cn/20190710194911479.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3UwMTA5ODE1MTk=,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>
+准备阶段<br>
+<img src="https://img-blog.csdnimg.cn/2019071019500469.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3UwMTA5ODE1MTk=,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>
+解析阶段<br>
+<img src="https://img-blog.csdnimg.cn/20190710195022713.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3UwMTA5ODE1MTk=,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>
+这三个阶段里，最核心的就是准备阶段，因为这个阶段是给加载进来的类分配内存空间，类变量分配内存空间，并且给出默认的初始值。</li>
+<li>核心阶段：初始化<br>
+在这个阶段即为类初始化代码，前一个准备阶段只是分配内存空间和默认值，这个阶段就是具体赋值了。<h6><a id="_32"></a>类的初始化规则</h6>
+<ol>
+<li>main方法立马初始化，或者实例化对象的时候初始化。</li>
+<li>此外还有一个重要规则，初始化一个类的时候，发现他的父类还未初始化时，那么必须优先初始化父类。</li>
+</ol>
+</li>
+</ul>
+<h4><a id="_37"></a>类加载机制与双亲委派机制</h4>
+<p>类加载器有下面几种：</p>
+<ol>
+<li>启动类加载器<br>
+Bootstrap ClassLoader，主要负责加载jdk安装目录下的核心类，及lib文件夹下面的类库。JVM启动即加载。</li>
+<li>扩展类加载器<br>
+Extensin ClassLoader,也是加载jdk安装目录下的类库的，这个是lib\ext文件夹下的类库。JVM启动即加载。</li>
+<li>应用程序类加载器<br>
+Application ClassLoader，这个就加载我们写的代码。</li>
+<li>自定义类加载器<br>
+自定义加载需要的类库，比较常见的java字节码加密，需要运行就需要写自定义类加载器了。</li>
+<li>双亲委派机制<br>
+JVM的类加载器是有亲子层级结构的，启动类加载器在最上层，扩展类加载器在第二层，应用程序类加载器的第三层，最后一层是自定义类加载器。<br>
+<img src="https://img-blog.csdnimg.cn/20190711202858454.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3UwMTA5ODE1MTk=,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>
+基于以上层级结构，就有一个双亲委派机制了。<br>
+应用程序加载一个类，会首先委派给自己 的父类去加载，最终传导去顶层的类加载器去加载<br>
+但是父类加载器在自己负责的范围内未找到这个类就会推到子类加载器。<br>
+<img src="https://img-blog.csdnimg.cn/20190711203238654.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3UwMTA5ODE1MTk=,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></li>
+</ol>
+</div>
+</body>
+
+</html>
